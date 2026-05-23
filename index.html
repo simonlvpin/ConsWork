@@ -79,22 +79,22 @@
           <div class="metric-grid">
             <article class="metric">
               <span>客户任务</span>
-              <strong>18</strong>
+              <strong id="metric-tasks">0</strong>
               <small>本月新增 6 个高优先级机会</small>
             </article>
             <article class="metric">
               <span>诊断报告</span>
-              <strong>42</strong>
+              <strong id="metric-reports">0</strong>
               <small>平均生成时间 8 分钟</small>
             </article>
             <article class="metric">
               <span>案例素材</span>
-              <strong>326</strong>
+              <strong id="metric-cases">0</strong>
               <small>来自本地、KH、KMS、历史 PPT</small>
             </article>
             <article class="metric">
               <span>方案 PPT</span>
-              <strong>27</strong>
+              <strong id="metric-solutions">0</strong>
               <small>支持 HTML 预览与 PPTX 扩展</small>
             </article>
           </div>
@@ -175,6 +175,10 @@
               <div class="inline-actions">
                 <button class="primary-action" id="run-diagnosis">运行需求诊断</button>
                 <button class="ghost-action" id="load-sample">载入样例</button>
+                <button class="ghost-action" id="save-report">保存报告</button>
+                <button class="ghost-action" id="export-report-html">导出 HTML</button>
+                <button class="ghost-action" id="export-report-json">导出 JSON</button>
+                <button class="ghost-action" id="create-kms-draft">生成 KMS 草稿</button>
               </div>
             </section>
 
@@ -197,7 +201,23 @@
               <p class="eyebrow">Benchmark Cases</p>
               <h2>同行案例匹配</h2>
             </div>
-            <button class="primary-action" id="run-cases">重新匹配案例</button>
+            <div class="inline-actions">
+              <select id="case-source-filter" class="toolbar-select" aria-label="案例来源筛选">
+                <option value="all">全部来源</option>
+                <option value="KH">KH</option>
+                <option value="KMS">KMS</option>
+                <option value="本地电脑">本地电脑</option>
+                <option value="历史 PPT">历史 PPT</option>
+              </select>
+              <select id="case-type-filter" class="toolbar-select" aria-label="材料类型筛选">
+                <option value="all">全部材料</option>
+                <option value="PPT">PPT</option>
+                <option value="Word">Word</option>
+                <option value="Excel">Excel</option>
+              </select>
+              <button class="ghost-action" id="export-cases">导出清单</button>
+              <button class="primary-action" id="run-cases">重新匹配案例</button>
+            </div>
           </div>
           <div class="context-strip" id="case-context"></div>
           <div class="case-grid" id="case-grid"></div>
@@ -211,6 +231,8 @@
             </div>
             <div class="inline-actions">
               <button class="ghost-action" id="save-solution">沉淀到历史</button>
+              <button class="ghost-action" id="export-solution-html">导出 HTML</button>
+              <button class="ghost-action" id="export-solution-md">导出 Markdown</button>
               <button class="primary-action" id="generate-solution">生成方案大纲</button>
             </div>
           </div>
@@ -237,6 +259,17 @@
               <p class="eyebrow">Knowledge Assets</p>
               <h2>历史生成资产</h2>
             </div>
+            <div class="inline-actions">
+              <select id="asset-type-filter" class="toolbar-select" aria-label="历史资产类型筛选">
+                <option value="all">全部资产</option>
+                <option value="HTML 报告">HTML 报告</option>
+                <option value="PPT 大纲">PPT 大纲</option>
+                <option value="案例清单">案例清单</option>
+                <option value="KMS 草稿">KMS 草稿</option>
+                <option value="推送记录">推送记录</option>
+              </select>
+              <button class="ghost-action" id="clear-local-data">清空本地演示数据</button>
+            </div>
           </div>
           <div class="asset-grid" id="asset-grid"></div>
         </section>
@@ -248,6 +281,12 @@
               <h2>个人平台令牌配置</h2>
             </div>
           </div>
+          <section class="panel config-note">
+            <h3>外部平台配置说明</h3>
+            <p>
+              这里保留为后续对接页面，不在当前版本接入真实接口。KMS 是内部文档撰写系统；KH 是线上资料平台，承载客户解决方案、项目解决方案等资料，常见材料形态包括 PPT、Word、Excel。
+            </p>
+          </section>
           <div class="settings-grid" id="settings-grid"></div>
         </section>
       </main>

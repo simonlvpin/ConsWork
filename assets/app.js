@@ -8,6 +8,9 @@ const state = {
   slides: [],
   selectedCaseIds: new Set(),
   tokens: {},
+  caseSourceFilter: "all",
+  caseTypeFilter: "all",
+  assetTypeFilter: "all",
 };
 
 const industryModels = {
@@ -81,6 +84,10 @@ const tasks = [
     status: "方案生成中",
     updated: "2026-05-23",
     requirement: sampleRequirement,
+    materials: [
+      { name: "客服中心需求交流纪要.docx", type: "Word", source: "客户交流", status: "已解析" },
+      { name: "智能客服历史方案.pptx", type: "PPT", source: "KH", status: "已索引" },
+    ],
   },
   {
     id: "task-002",
@@ -93,6 +100,9 @@ const tasks = [
     updated: "2026-05-22",
     requirement:
       "客户：长三角装备制造集团\n背景：售后工程师经验分散在个人电脑、服务工单和历史 PPT 中。\n当前问题：新人学习周期长，复杂设备故障依赖专家远程支持，案例材料无法快速沉淀。\n期望：建设售后知识运营助手，形成可复用案例和服务方案。",
+    materials: [
+      { name: "售后知识库现状调研.xlsx", type: "Excel", source: "客户需求文件", status: "已解析" },
+    ],
   },
   {
     id: "task-003",
@@ -105,6 +115,9 @@ const tasks = [
     updated: "2026-05-21",
     requirement:
       "客户：华南连锁零售品牌\n背景：门店数量超过 1200 家，会员运营、导购培训和活动复盘材料分散。\n当前问题：门店执行口径不一致，导购难以快速获取商品和活动话术。\n期望：形成门店运营知识助手和会员增长方案。",
+    materials: [
+      { name: "会员运营项目方案.pptx", type: "PPT", source: "KMS", status: "已索引" },
+    ],
   },
   {
     id: "task-004",
@@ -117,6 +130,9 @@ const tasks = [
     updated: "2026-05-20",
     requirement:
       "客户：某省政务服务中心\n背景：政策咨询量大，政策文件更新频繁，跨部门知识协同压力高。\n当前问题：人工回复效率不稳定，政策问答存在口径差异。\n期望：建设政策知识问答和办事指南生成能力。",
+    materials: [
+      { name: "政策问答需求清单.docx", type: "Word", source: "客户需求文件", status: "待解析" },
+    ],
   },
 ];
 
@@ -129,6 +145,8 @@ const cases = [
     score: 94,
     visibility: "内部可引用",
     source: "KMS",
+    materialType: "PPT",
+    link: "kms://bank-cs-knowledge-upgrade",
     reason:
       "同属银行客服场景，均存在知识库分散、坐席检索慢、回复口径不一致的问题，可复用智能知识检索、答案质检和人工闭环方案。",
   },
@@ -140,6 +158,8 @@ const cases = [
     score: 88,
     visibility: "脱敏可引用",
     source: "KH",
+    materialType: "Word",
+    link: "kh://insurance-compliance-assistant",
     reason:
       "案例覆盖合规话术、知识授权和敏感内容拦截，与当前客户对合规风险控制的隐含诉求高度相关。",
   },
@@ -151,6 +171,8 @@ const cases = [
     score: 82,
     visibility: "内部可引用",
     source: "本地电脑",
+    materialType: "Excel",
+    link: "/local/cases/manufacturing-after-sales.xlsx",
     reason:
       "虽然行业不同，但在知识分散、专家经验难复用、服务响应慢方面具备横向参考价值，可作为知识运营方法论补充。",
   },
@@ -162,6 +184,8 @@ const cases = [
     score: 91,
     visibility: "准标杆",
     source: "历史 PPT",
+    materialType: "PPT",
+    link: "history://branch-operation-assistant",
     reason:
       "与客户试点中的网点运营场景直接对应，可引用其分阶段实施路径、人员培训方式和运营指标设计。",
   },
@@ -173,36 +197,40 @@ const assets = [
     type: "HTML 报告",
     owner: "王晨",
     date: "2026-05-23",
+    summary: "围绕智能客服、知识运营、合规质检和方案生成的需求诊断报告。",
   },
   {
     title: "智能客服知识库升级方案",
     type: "PPT 大纲",
     owner: "王晨",
     date: "2026-05-23",
+    summary: "面向银行智能客服知识库升级的解决方案 PPT 大纲。",
   },
   {
     title: "装备制造售后知识运营案例清单",
     type: "案例清单",
     owner: "李可",
     date: "2026-05-22",
+    summary: "制造行业售后知识运营相关案例与材料清单。",
   },
   {
     title: "零售会员运营 Agent 诊断模板",
     type: "Agent 模型",
     owner: "陈璐",
     date: "2026-05-21",
+    summary: "零售行业会员运营诊断模型模板。",
   },
 ];
 
 const connectors = [
   {
     name: "KH",
-    desc: "行业方案、客户交流纪要、专家经验库",
+    desc: "线上资料平台，沉淀客户解决方案、项目解决方案等资料，主要材料形态为 PPT、Word、Excel。",
     placeholder: "kh_xxx",
   },
   {
     name: "KMS",
-    desc: "知识库、案例库、历史方案材料",
+    desc: "内部文档撰写系统，用于编写、沉淀和发布诊断报告、方案草稿与知识文档。",
     placeholder: "kms_xxx",
   },
   {
@@ -243,6 +271,32 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function saveWorkspace() {
+  localStorage.setItem("conswork.tasks", JSON.stringify(tasks));
+  localStorage.setItem("conswork.assets", JSON.stringify(assets));
+}
+
+function loadWorkspace() {
+  try {
+    const savedTasks = JSON.parse(localStorage.getItem("conswork.tasks") || "null");
+    if (Array.isArray(savedTasks) && savedTasks.length) {
+      tasks.splice(0, tasks.length, ...savedTasks);
+      state.selectedTaskId = tasks[0].id;
+    }
+  } catch {
+    localStorage.removeItem("conswork.tasks");
+  }
+
+  try {
+    const savedAssets = JSON.parse(localStorage.getItem("conswork.assets") || "null");
+    if (Array.isArray(savedAssets) && savedAssets.length) {
+      assets.splice(0, assets.length, ...savedAssets);
+    }
+  } catch {
+    localStorage.removeItem("conswork.assets");
+  }
+}
+
 function industryKeyFromLabel(label) {
   const map = {
     金融: "finance",
@@ -271,6 +325,33 @@ function showToast(message) {
   toast.classList.add("show");
   window.clearTimeout(showToast.timer);
   showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+function downloadFile(filename, content, type = "text/plain") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function renderMetrics() {
+  qs("#metric-tasks").textContent = tasks.length;
+  qs("#metric-reports").textContent = assets.filter((asset) => asset.type === "HTML 报告").length;
+  qs("#metric-cases").textContent = cases.length;
+  qs("#metric-solutions").textContent = assets.filter((asset) => asset.type === "PPT 大纲").length;
 }
 
 function switchView(view) {
@@ -347,7 +428,22 @@ function renderTasks() {
     </div>
     <div class="inline-actions">
       <button class="primary-action" data-action="go-diagnosis">进入诊断</button>
+      <button class="ghost-action" data-action="add-material">添加模拟材料</button>
+      <button class="ghost-action" data-action="summarize-materials">生成材料摘要</button>
       <button class="ghost-action" data-action="mark-pushed">标记已推送</button>
+    </div>
+    <div class="material-list">
+      <h4>需求材料</h4>
+      ${(selected.materials || [])
+        .map(
+          (material) => `
+            <div class="material-item">
+              <strong>${material.name}</strong>
+              <span>${material.type} · ${material.source} · ${material.status}</span>
+            </div>
+          `,
+        )
+        .join("") || "<p>暂无材料，可先添加模拟材料或在需求诊断页粘贴客户材料。</p>"}
     </div>
   `;
 
@@ -356,10 +452,33 @@ function renderTasks() {
   });
 
   qs('[data-action="go-diagnosis"]').addEventListener("click", () => switchView("diagnosis"));
+  qs('[data-action="add-material"]').addEventListener("click", () => {
+    selected.materials = selected.materials || [];
+    const type = ["PPT", "Word", "Excel"][selected.materials.length % 3];
+    selected.materials.push({
+      name: `${selected.name}${type === "PPT" ? "解决方案" : type === "Word" ? "需求纪要" : "数据清单"}.${type === "PPT" ? "pptx" : type === "Word" ? "docx" : "xlsx"}`,
+      type,
+      source: type === "PPT" ? "KH" : type === "Word" ? "KMS" : "本地电脑",
+      status: "已索引",
+    });
+    selected.updated = today();
+    saveWorkspace();
+    renderTasks();
+    showToast("已添加一条模拟材料");
+  });
+  qs('[data-action="summarize-materials"]').addEventListener("click", () => {
+    const materialCount = (selected.materials || []).length;
+    selected.requirement = `${selected.requirement}\n\n材料摘要：已纳入 ${materialCount} 份材料，覆盖客户需求、解决方案、项目数据和历史案例，可用于后续诊断与方案生成。`;
+    selected.updated = today();
+    saveWorkspace();
+    qs("#requirement-input").value = selected.requirement;
+    showToast("已把材料摘要追加到客户需求材料");
+  });
   qs('[data-action="mark-pushed"]').addEventListener("click", () => {
     selected.status = "已推送铁三角";
     selected.updated = today();
     addAsset(`${selected.name} 推送记录`, "推送记录", selected.owner.split(" / ")[0]);
+    saveWorkspace();
     renderAll();
     showToast("已生成推送记录并沉淀到历史资产");
   });
@@ -401,6 +520,7 @@ function selectTask(taskId) {
   state.matchedCases = [];
   state.slides = [];
   state.selectedCaseIds = new Set();
+  saveWorkspace();
   renderAll();
   showToast(`已切换到客户任务：${task.name}`);
 }
@@ -456,10 +576,41 @@ function buildDiagnosis() {
   task.updated = today();
   task.requirement = content;
   addAsset(`${state.diagnosis.customer} 需求诊断报告`, "HTML 报告", task.owner.split(" / ")[0], false);
+  saveWorkspace();
   renderDiagnosis();
   renderTasks();
   renderAssets();
   showToast("需求诊断 Agent 已生成结构化报告");
+}
+
+function diagnosisToHtml() {
+  const report = state.diagnosis;
+  if (!report) return "<p>暂无诊断报告。</p>";
+  return `<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8" /><title>${escapeHtml(report.customer)} 需求诊断报告</title></head>
+<body>
+  <h1>${escapeHtml(report.customer)} 需求诊断报告</h1>
+  <p>${escapeHtml(report.industry)} · ${escapeHtml(report.scenario)} · 机会评分 ${report.score}</p>
+  <h2>诊断摘要</h2>
+  <p>${escapeHtml(report.summary)}</p>
+  <h2>显性需求</h2>
+  <ul>${report.explicitNeeds.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <h2>隐性需求</h2>
+  <ul>${report.implicitNeeds.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <h2>主要风险</h2>
+  <ul>${report.risks.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <h2>推荐策略</h2>
+  <p>${escapeHtml(report.strategy)}</p>
+</body>
+</html>`;
+}
+
+function ensureDiagnosis() {
+  if (!state.diagnosis) {
+    buildDiagnosis();
+  }
+  return state.diagnosis;
 }
 
 function renderDiagnosis() {
@@ -520,6 +671,7 @@ function matchCases() {
   task.status = "案例匹配完成";
   task.updated = today();
   addAsset(`${task.name} 同行案例匹配清单`, "案例清单", task.owner.split(" / ")[0], false);
+  saveWorkspace();
   renderCases();
   renderTasks();
   renderAssets();
@@ -527,7 +679,12 @@ function matchCases() {
 }
 
 function renderCases() {
-  const list = state.matchedCases.length ? state.matchedCases : cases;
+  const baseList = state.matchedCases.length ? state.matchedCases : cases;
+  const list = baseList.filter((item) => {
+    const sourceOk = state.caseSourceFilter === "all" || item.source === state.caseSourceFilter;
+    const typeOk = state.caseTypeFilter === "all" || item.materialType === state.caseTypeFilter;
+    return sourceOk && typeOk;
+  });
   qs("#case-grid").innerHTML = list
     .map(
       (item) => `
@@ -544,6 +701,8 @@ function renderCases() {
             <span class="tag">${item.scenario}</span>
             <span class="tag">${item.visibility}</span>
             <span class="tag">${item.source}</span>
+            <span class="tag">${item.materialType}</span>
+            <span class="tag">${item.link}</span>
           </div>
           <button class="${state.selectedCaseIds.has(item.id) ? "primary-action" : "ghost-action"} case-toggle" data-case-id="${item.id}">
             ${state.selectedCaseIds.has(item.id) ? "已加入方案" : "加入方案"}
@@ -551,7 +710,7 @@ function renderCases() {
         </article>
       `,
     )
-    .join("");
+    .join("") || `<article class="case-card"><h3>暂无匹配案例</h3><p>请调整来源或材料类型筛选条件。</p></article>`;
 
   qsa(".case-toggle").forEach((button) => {
     button.addEventListener("click", () => {
@@ -566,6 +725,31 @@ function renderCases() {
   });
 }
 
+function selectedCaseList() {
+  const sourceCases = state.matchedCases.length ? state.matchedCases : cases;
+  return sourceCases.filter((item) => state.selectedCaseIds.has(item.id));
+}
+
+function exportCaseList() {
+  const rows = (state.matchedCases.length ? state.matchedCases : cases).map((item) =>
+    [
+      item.title,
+      item.industry,
+      item.scenario,
+      item.adjustedScore || item.score,
+      item.visibility,
+      item.source,
+      item.materialType,
+      item.link,
+      item.reason,
+    ].join(","),
+  );
+  const csv = ["案例名称,行业,场景,匹配分,可引用等级,来源,材料类型,链接,匹配原因", ...rows].join("\n");
+  downloadFile(`${currentTask().name}-同行案例清单.csv`, csv, "text/csv;charset=utf-8");
+  addAsset(`${currentTask().name} 同行案例导出清单`, "案例清单", currentTask().owner.split(" / ")[0]);
+  saveWorkspace();
+}
+
 function generateSlides(options = {}) {
   const silent = options.silent === true;
   const diagnosis = state.diagnosis || {
@@ -576,7 +760,7 @@ function generateSlides(options = {}) {
       "先落地需求诊断、案例匹配、方案生成闭环，再接入 KH、KMS、本地文件和推送渠道。",
   };
   const sourceCases = state.matchedCases.length ? state.matchedCases : cases;
-  const selectedCases = sourceCases.filter((item) => state.selectedCaseIds.has(item.id));
+  const selectedCases = selectedCaseList();
   const topCases = (selectedCases.length ? selectedCases : sourceCases).slice(0, 2);
 
   state.slides = [
@@ -628,6 +812,7 @@ function generateSlides(options = {}) {
   if (!silent) {
     task.status = "方案生成完成";
     task.updated = today();
+    saveWorkspace();
   }
   state.selectedSlide = 0;
   renderSlides();
@@ -672,6 +857,15 @@ function renderSlides() {
       <div><dt>备注</dt><dd>${slide.note}</dd></div>
       <div><dt>后续扩展</dt><dd>可接入 pptxgenjs 或 python-pptx 导出真实 PPTX。</dd></div>
     </dl>
+    <label class="edit-field">
+      <span>页面标题</span>
+      <input id="slide-title-edit" value="${escapeHtml(slide.title)}" />
+    </label>
+    <label class="edit-field">
+      <span>页面要点</span>
+      <textarea id="slide-body-edit">${slide.body.map((item) => escapeHtml(item)).join("\n")}</textarea>
+    </label>
+    <button class="primary-action" id="apply-slide-edit">应用修改</button>
   `;
 
   qsa(".slide-thumb").forEach((button) => {
@@ -680,6 +874,47 @@ function renderSlides() {
       renderSlides();
     });
   });
+
+  qs("#apply-slide-edit").addEventListener("click", () => {
+    slide.title = qs("#slide-title-edit").value.trim() || slide.title;
+    slide.body = qs("#slide-body-edit")
+      .value.split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+    renderSlides();
+    showToast("当前幻灯片已更新");
+  });
+}
+
+function solutionToHtml() {
+  const task = currentTask();
+  return `<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8" /><title>${escapeHtml(task.name)} 解决方案</title></head>
+<body>
+  <h1>${escapeHtml(task.name)} 解决方案</h1>
+  ${state.slides
+    .map(
+      (slide) => `
+        <section>
+          <h2>${escapeHtml(slide.title)}</h2>
+          <p>${escapeHtml(slide.subtitle)}</p>
+          <ul>${slide.body.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+        </section>
+      `,
+    )
+    .join("")}
+</body>
+</html>`;
+}
+
+function solutionToMarkdown() {
+  return state.slides
+    .map((slide, index) => {
+      const body = slide.body.map((item) => `- ${item}`).join("\n");
+      return `## ${index + 1}. ${slide.title}\n\n${slide.subtitle}\n\n${body}`;
+    })
+    .join("\n\n");
 }
 
 function renderAgents() {
@@ -745,12 +980,16 @@ function renderAgents() {
 }
 
 function renderAssets() {
-  qs("#asset-grid").innerHTML = assets
+  const filteredAssets = assets.filter(
+    (asset) => state.assetTypeFilter === "all" || asset.type === state.assetTypeFilter,
+  );
+  qs("#asset-grid").innerHTML = filteredAssets
     .map(
       (asset, index) => `
         <article class="asset-card">
           <h3>${asset.title}</h3>
           <p>${asset.type} · ${asset.owner} · ${asset.date}</p>
+          <p>${asset.summary || "该资产来自当前演示工作流，可作为后续 KH/KMS 发布或方案复用的候选材料。"}</p>
           <div class="asset-meta">
             <span class="tag">可查阅</span>
             <span class="tag">可复用</span>
@@ -760,12 +999,12 @@ function renderAssets() {
         </article>
       `,
     )
-    .join("");
+    .join("") || `<article class="asset-card"><h3>暂无历史资产</h3><p>请先运行诊断、案例匹配或方案生成。</p></article>`;
 
   qsa(".asset-open").forEach((button) => {
     button.addEventListener("click", () => {
-      const asset = assets[Number(button.dataset.assetIndex)];
-      showToast(`${asset.title}：${asset.type}，负责人 ${asset.owner}`);
+      const asset = filteredAssets[Number(button.dataset.assetIndex)];
+      showToast(`${asset.title}：${asset.summary || asset.type}`);
     });
   });
 }
@@ -778,8 +1017,10 @@ function addAsset(title, type, owner, render = true) {
       type,
       owner,
       date: today(),
+      summary: `${type} 已由 ConsWork 工作流生成，后续可发布到 KMS 或关联 KH 资料。`,
     });
   }
+  saveWorkspace();
   if (render) {
     renderAssets();
   }
@@ -792,6 +1033,7 @@ function renderSettings() {
         <article class="setting-card">
           <h3>${connector.name}</h3>
           <p>${connector.desc}</p>
+          <span class="status-pill warning">配置占位</span>
           <input type="password" value="${state.tokens[connector.name] || ""}" placeholder="${connector.placeholder}" aria-label="${connector.name} token" data-token-name="${connector.name}" />
           <button class="ghost-action token-save" data-token-name="${connector.name}">保存配置</button>
         </article>
@@ -821,6 +1063,7 @@ function refreshForIndustry() {
 }
 
 function renderAll() {
+  renderMetrics();
   renderTasks();
   renderPipeline();
   renderContexts();
@@ -860,12 +1103,61 @@ function bindEvents() {
   });
 
   qs("#run-diagnosis").addEventListener("click", buildDiagnosis);
+  qs("#save-report").addEventListener("click", () => {
+    const report = ensureDiagnosis();
+    addAsset(`${report.customer} 需求诊断报告`, "HTML 报告", currentTask().owner.split(" / ")[0]);
+    showToast("诊断报告已保存到历史资产");
+  });
+  qs("#export-report-html").addEventListener("click", () => {
+    const report = ensureDiagnosis();
+    downloadFile(`${report.customer}-需求诊断报告.html`, diagnosisToHtml(), "text/html;charset=utf-8");
+  });
+  qs("#export-report-json").addEventListener("click", () => {
+    const report = ensureDiagnosis();
+    downloadFile(
+      `${report.customer}-需求诊断报告.json`,
+      JSON.stringify(report, null, 2),
+      "application/json;charset=utf-8",
+    );
+  });
+  qs("#create-kms-draft").addEventListener("click", () => {
+    const report = ensureDiagnosis();
+    addAsset(`${report.customer} KMS 诊断草稿`, "KMS 草稿", currentTask().owner.split(" / ")[0]);
+    showToast("已生成 KMS 草稿占位，后续可接入内部文档撰写系统");
+  });
   qs("#run-cases").addEventListener("click", matchCases);
+  qs("#case-source-filter").addEventListener("change", (event) => {
+    state.caseSourceFilter = event.target.value;
+    renderCases();
+  });
+  qs("#case-type-filter").addEventListener("change", (event) => {
+    state.caseTypeFilter = event.target.value;
+    renderCases();
+  });
+  qs("#export-cases").addEventListener("click", exportCaseList);
   qs("#generate-solution").addEventListener("click", generateSlides);
   qs("#save-solution").addEventListener("click", () => {
     const task = currentTask();
     addAsset(`${task.name} 解决方案 PPT 大纲`, "PPT 大纲", task.owner.split(" / ")[0]);
     showToast("方案大纲已沉淀到历史资产");
+  });
+  qs("#export-solution-html").addEventListener("click", () => {
+    if (!state.slides.length) generateSlides({ silent: true });
+    downloadFile(`${currentTask().name}-解决方案.html`, solutionToHtml(), "text/html;charset=utf-8");
+  });
+  qs("#export-solution-md").addEventListener("click", () => {
+    if (!state.slides.length) generateSlides({ silent: true });
+    downloadFile(`${currentTask().name}-解决方案.md`, solutionToMarkdown(), "text/markdown;charset=utf-8");
+  });
+  qs("#asset-type-filter").addEventListener("change", (event) => {
+    state.assetTypeFilter = event.target.value;
+    renderAssets();
+  });
+  qs("#clear-local-data").addEventListener("click", () => {
+    localStorage.removeItem("conswork.tasks");
+    localStorage.removeItem("conswork.assets");
+    localStorage.removeItem("conswork.tokens");
+    showToast("本地演示数据已清空，刷新页面后恢复默认样例");
   });
   qs("#run-workflow").addEventListener("click", () => {
     buildDiagnosis();
@@ -898,6 +1190,7 @@ function bindEvents() {
       requirement: `客户：${qs("#task-name").value.trim()}\n背景：请在此补充客户背景、交流纪要或需求文件摘要。\n当前问题：\n1. \n2. \n期望：`,
     };
     tasks.unshift(task);
+    saveWorkspace();
     qs("#task-composer").reset();
     qs("#task-composer").hidden = true;
     selectTask(task.id);
@@ -906,8 +1199,12 @@ function bindEvents() {
 }
 
 function init() {
+  loadWorkspace();
   loadTokens();
-  qs("#requirement-input").value = sampleRequirement;
+  const task = currentTask();
+  state.industry = industryKeyFromLabel(task.industry);
+  qs("#industry-select").value = state.industry;
+  qs("#requirement-input").value = task.requirement || sampleRequirement;
   renderAll();
   bindEvents();
 }
