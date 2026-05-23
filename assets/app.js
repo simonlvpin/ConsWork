@@ -891,7 +891,7 @@ function bindEvents() {
       name: qs("#task-name").value.trim(),
       industry: qs("#task-industry").value,
       scenario: qs("#task-scenario").value.trim(),
-      stage: qs("#task-stage").value.trim(),
+      stage: qs("#task-stage").value,
       owner: qs("#task-owner").value.trim(),
       status: "待诊断",
       updated: today(),

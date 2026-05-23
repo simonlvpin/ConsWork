@@ -140,7 +140,15 @@
               <option>政企</option>
             </select>
             <input id="task-scenario" placeholder="业务场景" required />
-            <input id="task-stage" placeholder="客户阶段" required />
+            <select id="task-stage" required aria-label="客户阶段">
+              <option value="需求调研">需求调研</option>
+              <option value="方案交流">方案交流</option>
+              <option value="立项评估">立项评估</option>
+              <option value="试点规划">试点规划</option>
+              <option value="招标准备">招标准备</option>
+              <option value="商务推进">商务推进</option>
+              <option value="交付跟进">交付跟进</option>
+            </select>
             <input id="task-owner" placeholder="负责人 / 角色" required />
             <div class="inline-actions">
               <button class="primary-action" type="submit">保存任务</button>
