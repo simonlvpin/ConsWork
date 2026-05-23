@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ConsWork | AI 行业需求诊断与方案生成平台</title>
+    <title>ConsWork | 行业需求诊断与方案生成 Agent 平台</title>
     <link rel="stylesheet" href="./assets/styles.css" />
   </head>
   <body>
@@ -13,7 +13,7 @@
           <div class="brand-mark">CW</div>
           <div>
             <strong>ConsWork</strong>
-            <span>AI 方案工作台</span>
+            <span>Agent 方案平台</span>
           </div>
         </div>
 
@@ -38,9 +38,13 @@
         <header class="topbar">
           <div>
             <p class="eyebrow">Customer Intelligence Workspace</p>
-            <h1 id="page-title">AI 行业需求诊断与方案生成平台</h1>
+            <h1 id="page-title">行业需求诊断与方案生成 Agent 平台</h1>
           </div>
           <div class="topbar-actions">
+            <label class="select-field">
+              <span>当前客户</span>
+              <select id="task-select"></select>
+            </label>
             <label class="select-field">
               <span>行业模型</span>
               <select id="industry-select">
@@ -50,7 +54,7 @@
                 <option value="government">政企行业</option>
               </select>
             </label>
-            <button class="primary-action" id="run-workflow">运行 AI 工作流</button>
+            <button class="primary-action" id="run-workflow">运行 Agent 工作流</button>
           </div>
         </header>
 
@@ -60,7 +64,7 @@
               <p class="eyebrow">ConsWork MVP</p>
               <h2>把客户材料转化为诊断报告、同行案例和解决方案 PPT</h2>
               <p>
-                面向售前、行业方案、客户成功团队的 AI 工作台。当前版本以内置模拟数据展示完整工作流，后续可接入 KH、KMS、本地文件夹、录屏转写和企业微信/飞书推送。
+                面向售前、行业方案、客户成功团队的 Agent 工作台。当前版本以内置模拟数据展示完整工作流，后续可接入 KH、KMS、本地文件夹、录屏转写和企业微信/飞书推送。
               </p>
             </div>
             <div class="hero-panel" aria-label="工作流概览">
@@ -111,7 +115,7 @@
               <div class="section-heading">
                 <div>
                   <p class="eyebrow">Agent Runtime</p>
-                  <h3>AI 工作流状态</h3>
+                  <h3>Agent 工作流状态</h3>
                 </div>
               </div>
               <div class="agent-pipeline" id="pipeline-status"></div>
@@ -127,7 +131,26 @@
             </div>
             <button class="primary-action" id="new-task">新建任务</button>
           </div>
-          <div class="task-table" id="task-table"></div>
+          <form class="task-composer" id="task-composer" hidden>
+            <input id="task-name" placeholder="客户名称" required />
+            <select id="task-industry">
+              <option>金融</option>
+              <option>制造</option>
+              <option>零售</option>
+              <option>政企</option>
+            </select>
+            <input id="task-scenario" placeholder="业务场景" required />
+            <input id="task-stage" placeholder="客户阶段" required />
+            <input id="task-owner" placeholder="负责人 / 角色" required />
+            <div class="inline-actions">
+              <button class="primary-action" type="submit">保存任务</button>
+              <button class="ghost-action" type="button" id="cancel-task">取消</button>
+            </div>
+          </form>
+          <div class="content-grid two-col">
+            <div class="task-table" id="task-table"></div>
+            <section class="panel" id="task-detail"></section>
+          </div>
         </section>
 
         <section class="view" id="diagnosis">
@@ -139,6 +162,7 @@
                   <h3>客户需求材料</h3>
                 </div>
               </div>
+              <div class="context-strip" id="diagnosis-context"></div>
               <textarea id="requirement-input" aria-label="客户需求材料"></textarea>
               <div class="inline-actions">
                 <button class="primary-action" id="run-diagnosis">运行需求诊断</button>
@@ -167,6 +191,7 @@
             </div>
             <button class="primary-action" id="run-cases">重新匹配案例</button>
           </div>
+          <div class="context-strip" id="case-context"></div>
           <div class="case-grid" id="case-grid"></div>
         </section>
 
@@ -176,7 +201,10 @@
               <p class="eyebrow">Solution Deck</p>
               <h2>解决方案 PPT 生成</h2>
             </div>
-            <button class="primary-action" id="generate-solution">生成方案大纲</button>
+            <div class="inline-actions">
+              <button class="ghost-action" id="save-solution">沉淀到历史</button>
+              <button class="primary-action" id="generate-solution">生成方案大纲</button>
+            </div>
           </div>
           <div class="deck-layout">
             <aside class="slide-list" id="slide-list"></aside>

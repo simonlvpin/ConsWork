@@ -1,10 +1,13 @@
 const state = {
   activeView: "dashboard",
   industry: "finance",
+  selectedTaskId: "task-001",
   selectedSlide: 0,
   diagnosis: null,
   matchedCases: [],
   slides: [],
+  selectedCaseIds: new Set(),
+  tokens: {},
 };
 
 const industryModels = {
@@ -69,6 +72,7 @@ const sampleRequirement = `客户：华东某股份制银行
 
 const tasks = [
   {
+    id: "task-001",
     name: "华东某股份制银行",
     industry: "金融",
     scenario: "智能客服",
@@ -76,8 +80,10 @@ const tasks = [
     owner: "王晨 / 售前",
     status: "方案生成中",
     updated: "2026-05-23",
+    requirement: sampleRequirement,
   },
   {
+    id: "task-002",
     name: "长三角装备制造集团",
     industry: "制造",
     scenario: "售后知识库",
@@ -85,8 +91,11 @@ const tasks = [
     owner: "李可 / 行业方案",
     status: "案例匹配完成",
     updated: "2026-05-22",
+    requirement:
+      "客户：长三角装备制造集团\n背景：售后工程师经验分散在个人电脑、服务工单和历史 PPT 中。\n当前问题：新人学习周期长，复杂设备故障依赖专家远程支持，案例材料无法快速沉淀。\n期望：建设售后知识运营助手，形成可复用案例和服务方案。",
   },
   {
+    id: "task-003",
     name: "华南连锁零售品牌",
     industry: "零售",
     scenario: "会员运营",
@@ -94,8 +103,11 @@ const tasks = [
     owner: "陈璐 / 客成",
     status: "需求诊断完成",
     updated: "2026-05-21",
+    requirement:
+      "客户：华南连锁零售品牌\n背景：门店数量超过 1200 家，会员运营、导购培训和活动复盘材料分散。\n当前问题：门店执行口径不一致，导购难以快速获取商品和活动话术。\n期望：形成门店运营知识助手和会员增长方案。",
   },
   {
+    id: "task-004",
     name: "某省政务服务中心",
     industry: "政企",
     scenario: "政策问答",
@@ -103,11 +115,14 @@ const tasks = [
     owner: "周远 / 售前",
     status: "待诊断",
     updated: "2026-05-20",
+    requirement:
+      "客户：某省政务服务中心\n背景：政策咨询量大，政策文件更新频繁，跨部门知识协同压力高。\n当前问题：人工回复效率不稳定，政策问答存在口径差异。\n期望：建设政策知识问答和办事指南生成能力。",
   },
 ];
 
 const cases = [
   {
+    id: "case-001",
     title: "某国有银行智能客服知识库升级",
     industry: "金融",
     scenario: "客服降本增效",
@@ -118,6 +133,7 @@ const cases = [
       "同属银行客服场景，均存在知识库分散、坐席检索慢、回复口径不一致的问题，可复用智能知识检索、答案质检和人工闭环方案。",
   },
   {
+    id: "case-002",
     title: "某保险集团销售助手与合规问答",
     industry: "金融",
     scenario: "合规问答",
@@ -128,6 +144,7 @@ const cases = [
       "案例覆盖合规话术、知识授权和敏感内容拦截，与当前客户对合规风险控制的隐含诉求高度相关。",
   },
   {
+    id: "case-003",
     title: "某制造企业售后专家经验沉淀",
     industry: "制造",
     scenario: "售后知识管理",
@@ -138,6 +155,7 @@ const cases = [
       "虽然行业不同，但在知识分散、专家经验难复用、服务响应慢方面具备横向参考价值，可作为知识运营方法论补充。",
   },
   {
+    id: "case-004",
     title: "某城商行网点运营知识助手",
     industry: "金融",
     scenario: "网点运营",
@@ -169,7 +187,7 @@ const assets = [
     date: "2026-05-22",
   },
   {
-    title: "零售会员运营 AI 诊断模板",
+    title: "零售会员运营 Agent 诊断模板",
     type: "Agent 模型",
     owner: "陈璐",
     date: "2026-05-21",
@@ -217,6 +235,36 @@ function qsa(selector) {
   return Array.from(document.querySelectorAll(selector));
 }
 
+function currentTask() {
+  return tasks.find((task) => task.id === state.selectedTaskId) || tasks[0];
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function industryKeyFromLabel(label) {
+  const map = {
+    金融: "finance",
+    制造: "manufacturing",
+    零售: "retail",
+    政企: "government",
+  };
+  return map[label] || "finance";
+}
+
+function persistTokens() {
+  localStorage.setItem("conswork.tokens", JSON.stringify(state.tokens));
+}
+
+function loadTokens() {
+  try {
+    state.tokens = JSON.parse(localStorage.getItem("conswork.tokens") || "{}");
+  } catch {
+    state.tokens = {};
+  }
+}
+
 function showToast(message) {
   const toast = qs("#toast");
   toast.textContent = message;
@@ -233,7 +281,7 @@ function switchView(view) {
   );
 
   const titles = {
-    dashboard: "AI 行业需求诊断与方案生成平台",
+    dashboard: "行业需求诊断与方案生成 Agent 平台",
     tasks: "客户任务中心",
     diagnosis: "需求诊断工作台",
     cases: "同行案例匹配",
@@ -246,12 +294,20 @@ function switchView(view) {
 }
 
 function renderTasks() {
+  const selected = currentTask();
+  qs("#task-select").innerHTML = tasks
+    .map(
+      (task) =>
+        `<option value="${task.id}" ${task.id === state.selectedTaskId ? "selected" : ""}>${task.name}</option>`,
+    )
+    .join("");
+
   const dashboard = qs("#dashboard-tasks");
   dashboard.innerHTML = tasks
     .slice(0, 3)
     .map(
       (task) => `
-        <article class="task-row">
+        <article class="task-row ${task.id === state.selectedTaskId ? "selected" : ""}" data-task-id="${task.id}">
           <div>
             <strong>${task.name}</strong>
             <span>${task.industry} · ${task.scenario} · ${task.stage}</span>
@@ -266,7 +322,7 @@ function renderTasks() {
   qs("#task-table").innerHTML = tasks
     .map(
       (task) => `
-        <article class="task-table-row">
+        <article class="task-table-row ${task.id === state.selectedTaskId ? "selected" : ""}" data-task-id="${task.id}">
           <div><span class="table-label">客户</span><strong>${task.name}</strong></div>
           <div><span class="table-label">行业</span><strong>${task.industry}</strong></div>
           <div><span class="table-label">场景</span><strong>${task.scenario}</strong></div>
@@ -277,6 +333,36 @@ function renderTasks() {
       `,
     )
     .join("");
+
+  qs("#task-detail").innerHTML = `
+    <p class="eyebrow">Current Task</p>
+    <h3>${selected.name}</h3>
+    <div class="detail-stack">
+      <p><strong>行业：</strong>${selected.industry}</p>
+      <p><strong>场景：</strong>${selected.scenario}</p>
+      <p><strong>阶段：</strong>${selected.stage}</p>
+      <p><strong>负责人：</strong>${selected.owner}</p>
+      <p><strong>状态：</strong>${selected.status}</p>
+      <p><strong>最近更新：</strong>${selected.updated}</p>
+    </div>
+    <div class="inline-actions">
+      <button class="primary-action" data-action="go-diagnosis">进入诊断</button>
+      <button class="ghost-action" data-action="mark-pushed">标记已推送</button>
+    </div>
+  `;
+
+  qsa("[data-task-id]").forEach((row) => {
+    row.addEventListener("click", () => selectTask(row.dataset.taskId));
+  });
+
+  qs('[data-action="go-diagnosis"]').addEventListener("click", () => switchView("diagnosis"));
+  qs('[data-action="mark-pushed"]').addEventListener("click", () => {
+    selected.status = "已推送铁三角";
+    selected.updated = today();
+    addAsset(`${selected.name} 推送记录`, "推送记录", selected.owner.split(" / ")[0]);
+    renderAll();
+    showToast("已生成推送记录并沉淀到历史资产");
+  });
 }
 
 function renderPipeline(running = false) {
@@ -305,15 +391,43 @@ function renderPipeline(running = false) {
     .join("");
 }
 
+function selectTask(taskId) {
+  state.selectedTaskId = taskId;
+  const task = currentTask();
+  state.industry = industryKeyFromLabel(task.industry);
+  qs("#industry-select").value = state.industry;
+  qs("#requirement-input").value = task.requirement || sampleRequirement;
+  state.diagnosis = null;
+  state.matchedCases = [];
+  state.slides = [];
+  state.selectedCaseIds = new Set();
+  renderAll();
+  showToast(`已切换到客户任务：${task.name}`);
+}
+
+function renderContexts() {
+  const task = currentTask();
+  const text = `
+    <span>当前客户：<strong>${task.name}</strong></span>
+    <span>行业：${task.industry}</span>
+    <span>场景：${task.scenario}</span>
+    <span>阶段：${task.stage}</span>
+    <span>负责人：${task.owner}</span>
+  `;
+  qs("#diagnosis-context").innerHTML = text;
+  qs("#case-context").innerHTML = text;
+}
+
 function buildDiagnosis() {
   const model = industryModels[state.industry];
   const content = qs("#requirement-input").value.trim() || sampleRequirement;
   const isFinance = state.industry === "finance";
+  const task = currentTask();
 
   state.diagnosis = {
     customer: content.includes("客户：")
       ? content.split("客户：")[1].split("\n")[0].trim()
-      : "未命名客户",
+      : task.name,
     industry: model.label,
     scenario: model.scenario,
     score: isFinance ? 88 : 81,
@@ -338,7 +452,13 @@ function buildDiagnosis() {
       "建议先落地 MVP 闭环：需求输入、三段 Agent 编排、HTML 报告、案例清单、PPT 大纲和历史记录，再逐步接入真实知识源与推送渠道。",
   };
 
+  task.status = "需求诊断完成";
+  task.updated = today();
+  task.requirement = content;
+  addAsset(`${state.diagnosis.customer} 需求诊断报告`, "HTML 报告", task.owner.split(" / ")[0], false);
   renderDiagnosis();
+  renderTasks();
+  renderAssets();
   showToast("需求诊断 Agent 已生成结构化报告");
 }
 
@@ -395,7 +515,14 @@ function matchCases() {
       adjustedScore: item.industry === preferred ? item.score : item.score - 8,
     }))
     .sort((a, b) => b.adjustedScore - a.adjustedScore);
+  state.selectedCaseIds = new Set(state.matchedCases.slice(0, 2).map((item) => item.id));
+  const task = currentTask();
+  task.status = "案例匹配完成";
+  task.updated = today();
+  addAsset(`${task.name} 同行案例匹配清单`, "案例清单", task.owner.split(" / ")[0], false);
   renderCases();
+  renderTasks();
+  renderAssets();
   showToast("案例匹配 Agent 已完成排序和推荐");
 }
 
@@ -418,13 +545,29 @@ function renderCases() {
             <span class="tag">${item.visibility}</span>
             <span class="tag">${item.source}</span>
           </div>
+          <button class="${state.selectedCaseIds.has(item.id) ? "primary-action" : "ghost-action"} case-toggle" data-case-id="${item.id}">
+            ${state.selectedCaseIds.has(item.id) ? "已加入方案" : "加入方案"}
+          </button>
         </article>
       `,
     )
     .join("");
+
+  qsa(".case-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.caseId;
+      if (state.selectedCaseIds.has(id)) {
+        state.selectedCaseIds.delete(id);
+      } else {
+        state.selectedCaseIds.add(id);
+      }
+      renderCases();
+    });
+  });
 }
 
-function generateSlides() {
+function generateSlides(options = {}) {
+  const silent = options.silent === true;
   const diagnosis = state.diagnosis || {
     customer: "华东某股份制银行",
     industry: "金融行业",
@@ -432,13 +575,15 @@ function generateSlides() {
     strategy:
       "先落地需求诊断、案例匹配、方案生成闭环，再接入 KH、KMS、本地文件和推送渠道。",
   };
-  const topCases = (state.matchedCases.length ? state.matchedCases : cases).slice(0, 2);
+  const sourceCases = state.matchedCases.length ? state.matchedCases : cases;
+  const selectedCases = sourceCases.filter((item) => state.selectedCaseIds.has(item.id));
+  const topCases = (selectedCases.length ? selectedCases : sourceCases).slice(0, 2);
 
   state.slides = [
     {
-      title: `${diagnosis.customer} AI 需求诊断与解决方案`,
+      title: `${diagnosis.customer} 需求诊断与解决方案`,
       subtitle: `${diagnosis.industry} · ${diagnosis.scenario}`,
-      body: ["客户需求理解", "同行案例对标", "AI 方案生成与实施路径"],
+      body: ["客户需求理解", "同行案例对标", "Agent 方案生成与实施路径"],
       note: "封面页，面向客户管理层或铁三角内部评审。",
     },
     {
@@ -479,9 +624,17 @@ function generateSlides() {
     },
   ];
 
+  const task = currentTask();
+  if (!silent) {
+    task.status = "方案生成完成";
+    task.updated = today();
+  }
   state.selectedSlide = 0;
   renderSlides();
-  showToast("方案生成 Agent 已生成 PPT 大纲");
+  if (!silent) {
+    renderTasks();
+    showToast("方案生成 Agent 已生成 PPT 大纲");
+  }
 }
 
 function renderSlides() {
@@ -572,7 +725,7 @@ function renderAgents() {
 
   qs("#agent-grid").innerHTML = baseAgents
     .map(
-      (agent) => `
+      (agent, index) => `
         <article class="agent-card">
           <h3>${agent.name}</h3>
           <p>${agent.desc}</p>
@@ -581,6 +734,10 @@ function renderAgents() {
             <span class="tag">输入：${agent.input}</span>
             <span class="tag">输出：${agent.output}</span>
           </div>
+          <label class="switch-row">
+            <input type="checkbox" ${index < 4 ? "checked" : ""} />
+            <span>${index < 4 ? "参与当前工作流" : "作为增强能力启用"}</span>
+          </label>
         </article>
       `,
     )
@@ -590,7 +747,7 @@ function renderAgents() {
 function renderAssets() {
   qs("#asset-grid").innerHTML = assets
     .map(
-      (asset) => `
+      (asset, index) => `
         <article class="asset-card">
           <h3>${asset.title}</h3>
           <p>${asset.type} · ${asset.owner} · ${asset.date}</p>
@@ -599,10 +756,33 @@ function renderAssets() {
             <span class="tag">可复用</span>
             <span class="tag">可推送</span>
           </div>
+          <button class="ghost-action asset-open" data-asset-index="${index}">查看摘要</button>
         </article>
       `,
     )
     .join("");
+
+  qsa(".asset-open").forEach((button) => {
+    button.addEventListener("click", () => {
+      const asset = assets[Number(button.dataset.assetIndex)];
+      showToast(`${asset.title}：${asset.type}，负责人 ${asset.owner}`);
+    });
+  });
+}
+
+function addAsset(title, type, owner, render = true) {
+  const exists = assets.some((asset) => asset.title === title && asset.type === type);
+  if (!exists) {
+    assets.unshift({
+      title,
+      type,
+      owner,
+      date: today(),
+    });
+  }
+  if (render) {
+    renderAssets();
+  }
 }
 
 function renderSettings() {
@@ -612,19 +792,48 @@ function renderSettings() {
         <article class="setting-card">
           <h3>${connector.name}</h3>
           <p>${connector.desc}</p>
-          <input type="password" placeholder="${connector.placeholder}" aria-label="${connector.name} token" />
+          <input type="password" value="${state.tokens[connector.name] || ""}" placeholder="${connector.placeholder}" aria-label="${connector.name} token" data-token-name="${connector.name}" />
+          <button class="ghost-action token-save" data-token-name="${connector.name}">保存配置</button>
         </article>
       `,
     )
     .join("");
+
+  qsa(".token-save").forEach((button) => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.tokenName;
+      const input = qs(`input[data-token-name="${name}"]`);
+      state.tokens[name] = input.value.trim();
+      persistTokens();
+      showToast(`${name} 配置已保存到本地浏览器`);
+    });
+  });
 }
 
 function refreshForIndustry() {
-  renderAgents();
-  matchCases();
+  state.matchedCases = [];
+  state.selectedCaseIds = new Set();
   state.slides = [];
-  renderSlides();
+  renderAgents();
+  renderCases();
+  generateSlides({ silent: true });
   showToast(`已切换到${industryModels[state.industry].label}诊断模型`);
+}
+
+function renderAll() {
+  renderTasks();
+  renderPipeline();
+  renderContexts();
+  renderDiagnosis();
+  renderCases();
+  renderAgents();
+  renderAssets();
+  renderSettings();
+  if (state.slides.length) {
+    renderSlides();
+  } else {
+    generateSlides({ silent: true });
+  }
 }
 
 function bindEvents() {
@@ -641,6 +850,10 @@ function bindEvents() {
     refreshForIndustry();
   });
 
+  qs("#task-select").addEventListener("change", (event) => {
+    selectTask(event.target.value);
+  });
+
   qs("#load-sample").addEventListener("click", () => {
     qs("#requirement-input").value = sampleRequirement;
     showToast("已载入客户需求样例");
@@ -649,29 +862,53 @@ function bindEvents() {
   qs("#run-diagnosis").addEventListener("click", buildDiagnosis);
   qs("#run-cases").addEventListener("click", matchCases);
   qs("#generate-solution").addEventListener("click", generateSlides);
+  qs("#save-solution").addEventListener("click", () => {
+    const task = currentTask();
+    addAsset(`${task.name} 解决方案 PPT 大纲`, "PPT 大纲", task.owner.split(" / ")[0]);
+    showToast("方案大纲已沉淀到历史资产");
+  });
   qs("#run-workflow").addEventListener("click", () => {
     buildDiagnosis();
     matchCases();
     generateSlides();
     renderPipeline(true);
-    showToast("完整 AI 工作流已运行完成");
+    showToast("完整 Agent 工作流已运行完成");
   });
 
   qs("#new-task").addEventListener("click", () => {
-    showToast("MVP 当前使用模拟数据，后续版本将接入任务创建表单");
+    qs("#task-composer").hidden = false;
+    qs("#task-name").focus();
+  });
+
+  qs("#cancel-task").addEventListener("click", () => {
+    qs("#task-composer").hidden = true;
+  });
+
+  qs("#task-composer").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const task = {
+      id: `task-${Date.now()}`,
+      name: qs("#task-name").value.trim(),
+      industry: qs("#task-industry").value,
+      scenario: qs("#task-scenario").value.trim(),
+      stage: qs("#task-stage").value.trim(),
+      owner: qs("#task-owner").value.trim(),
+      status: "待诊断",
+      updated: today(),
+      requirement: `客户：${qs("#task-name").value.trim()}\n背景：请在此补充客户背景、交流纪要或需求文件摘要。\n当前问题：\n1. \n2. \n期望：`,
+    };
+    tasks.unshift(task);
+    qs("#task-composer").reset();
+    qs("#task-composer").hidden = true;
+    selectTask(task.id);
+    showToast("客户任务已创建，可以进入需求诊断");
   });
 }
 
 function init() {
+  loadTokens();
   qs("#requirement-input").value = sampleRequirement;
-  renderTasks();
-  renderPipeline();
-  renderDiagnosis();
-  renderCases();
-  renderAgents();
-  renderAssets();
-  renderSettings();
-  generateSlides();
+  renderAll();
   bindEvents();
 }
 
