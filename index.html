@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ConsWork | AI 行业需求诊断与方案生成平台</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">CW</div>
+          <div>
+            <strong>ConsWork</strong>
+            <span>AI 方案工作台</span>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="主导航">
+          <button class="nav-item active" data-view="dashboard">工作台</button>
+          <button class="nav-item" data-view="tasks">客户任务</button>
+          <button class="nav-item" data-view="diagnosis">需求诊断</button>
+          <button class="nav-item" data-view="cases">案例匹配</button>
+          <button class="nav-item" data-view="solutions">方案生成</button>
+          <button class="nav-item" data-view="agents">Agent 配置</button>
+          <button class="nav-item" data-view="history">历史资产</button>
+          <button class="nav-item" data-view="settings">平台令牌</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span>当前流程</span>
+          <strong>诊断 → 案例 → 方案 → 推送</strong>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Customer Intelligence Workspace</p>
+            <h1 id="page-title">AI 行业需求诊断与方案生成平台</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="select-field">
+              <span>行业模型</span>
+              <select id="industry-select">
+                <option value="finance">金融行业</option>
+                <option value="manufacturing">制造行业</option>
+                <option value="retail">零售行业</option>
+                <option value="government">政企行业</option>
+              </select>
+            </label>
+            <button class="primary-action" id="run-workflow">运行 AI 工作流</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <div class="hero-band">
+            <div>
+              <p class="eyebrow">ConsWork MVP</p>
+              <h2>把客户材料转化为诊断报告、同行案例和解决方案 PPT</h2>
+              <p>
+                面向售前、行业方案、客户成功团队的 AI 工作台。当前版本以内置模拟数据展示完整工作流，后续可接入 KH、KMS、本地文件夹、录屏转写和企业微信/飞书推送。
+              </p>
+            </div>
+            <div class="hero-panel" aria-label="工作流概览">
+              <div class="flow-step done">资料解析</div>
+              <div class="flow-step active">需求诊断</div>
+              <div class="flow-step">案例匹配</div>
+              <div class="flow-step">方案生成</div>
+              <div class="flow-step">铁三角推送</div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric">
+              <span>客户任务</span>
+              <strong>18</strong>
+              <small>本月新增 6 个高优先级机会</small>
+            </article>
+            <article class="metric">
+              <span>诊断报告</span>
+              <strong>42</strong>
+              <small>平均生成时间 8 分钟</small>
+            </article>
+            <article class="metric">
+              <span>案例素材</span>
+              <strong>326</strong>
+              <small>来自本地、KH、KMS、历史 PPT</small>
+            </article>
+            <article class="metric">
+              <span>方案 PPT</span>
+              <strong>27</strong>
+              <small>支持 HTML 预览与 PPTX 扩展</small>
+            </article>
+          </div>
+
+          <div class="content-grid two-col">
+            <section class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Recent Tasks</p>
+                  <h3>最近客户任务</h3>
+                </div>
+                <button class="ghost-action" data-view-target="tasks">查看全部</button>
+              </div>
+              <div id="dashboard-tasks" class="task-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Agent Runtime</p>
+                  <h3>AI 工作流状态</h3>
+                </div>
+              </div>
+              <div class="agent-pipeline" id="pipeline-status"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="tasks">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Customer Tasks</p>
+              <h2>客户任务中心</h2>
+            </div>
+            <button class="primary-action" id="new-task">新建任务</button>
+          </div>
+          <div class="task-table" id="task-table"></div>
+        </section>
+
+        <section class="view" id="diagnosis">
+          <div class="workspace-grid">
+            <section class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <p class="eyebrow">Input</p>
+                  <h3>客户需求材料</h3>
+                </div>
+              </div>
+              <textarea id="requirement-input" aria-label="客户需求材料"></textarea>
+              <div class="inline-actions">
+                <button class="primary-action" id="run-diagnosis">运行需求诊断</button>
+                <button class="ghost-action" id="load-sample">载入样例</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="section-heading compact">
+                <div>
+                  <p class="eyebrow">Diagnosis</p>
+                  <h3>诊断报告</h3>
+                </div>
+                <span class="status-pill" id="diagnosis-status">待运行</span>
+              </div>
+              <div id="diagnosis-report" class="report-body"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="cases">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Benchmark Cases</p>
+              <h2>同行案例匹配</h2>
+            </div>
+            <button class="primary-action" id="run-cases">重新匹配案例</button>
+          </div>
+          <div class="case-grid" id="case-grid"></div>
+        </section>
+
+        <section class="view" id="solutions">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Solution Deck</p>
+              <h2>解决方案 PPT 生成</h2>
+            </div>
+            <button class="primary-action" id="generate-solution">生成方案大纲</button>
+          </div>
+          <div class="deck-layout">
+            <aside class="slide-list" id="slide-list"></aside>
+            <section class="slide-preview" id="slide-preview"></section>
+            <aside class="panel slide-meta" id="slide-meta"></aside>
+          </div>
+        </section>
+
+        <section class="view" id="agents">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Skill Orchestration</p>
+              <h2>Agent / Skill 配置</h2>
+            </div>
+          </div>
+          <div class="agent-grid" id="agent-grid"></div>
+        </section>
+
+        <section class="view" id="history">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Knowledge Assets</p>
+              <h2>历史生成资产</h2>
+            </div>
+          </div>
+          <div class="asset-grid" id="asset-grid"></div>
+        </section>
+
+        <section class="view" id="settings">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Connectors</p>
+              <h2>个人平台令牌配置</h2>
+            </div>
+          </div>
+          <div class="settings-grid" id="settings-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./assets/app.js"></script>
+  </body>
+</html>
