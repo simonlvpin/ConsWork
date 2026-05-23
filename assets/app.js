@@ -1,6 +1,5 @@
 const state = {
   activeView: "dashboard",
-  industry: "finance",
   selectedTaskId: "task-001",
   selectedSlide: 0,
   diagnosis: null,
@@ -11,57 +10,6 @@ const state = {
   caseSourceFilter: "all",
   caseTypeFilter: "all",
   assetTypeFilter: "all",
-};
-
-const industryModels = {
-  finance: {
-    label: "金融行业",
-    scenario: "智能客服与知识运营",
-    summary:
-      "面向银行、保险、证券等客户，重点识别合规风控、服务效率、知识一致性、坐席赋能和智能化运营机会。",
-    agents: [
-      "金融需求诊断 Skill",
-      "金融案例匹配 Skill",
-      "合规风险复核 Skill",
-      "金融方案生成 Skill",
-    ],
-  },
-  manufacturing: {
-    label: "制造行业",
-    scenario: "生产运营与售后知识管理",
-    summary:
-      "面向离散制造、装备制造、流程制造客户，重点识别生产协同、售后效率、知识沉淀、质量追溯和 ROI 测算机会。",
-    agents: [
-      "制造需求诊断 Skill",
-      "制造案例匹配 Skill",
-      "ROI 测算 Skill",
-      "制造方案生成 Skill",
-    ],
-  },
-  retail: {
-    label: "零售行业",
-    scenario: "门店运营与会员增长",
-    summary:
-      "面向连锁零售、品牌商、平台型客户，重点识别会员运营、导购赋能、服务体验、营销效率和数据洞察机会。",
-    agents: [
-      "零售需求诊断 Skill",
-      "增长案例匹配 Skill",
-      "会员运营分析 Skill",
-      "零售方案生成 Skill",
-    ],
-  },
-  government: {
-    label: "政企行业",
-    scenario: "政务服务与知识协同",
-    summary:
-      "面向政务、园区、公共事业客户，重点识别办事效率、政策知识、跨部门协同、国产化适配和安全合规机会。",
-    agents: [
-      "政企需求诊断 Skill",
-      "政企案例匹配 Skill",
-      "安全合规复核 Skill",
-      "政企方案生成 Skill",
-    ],
-  },
 };
 
 const sampleRequirement = `客户：华东某股份制银行
@@ -218,7 +166,7 @@ const assets = [
     type: "Agent 模型",
     owner: "陈璐",
     date: "2026-05-21",
-    summary: "零售行业会员运营诊断模型模板。",
+    summary: "面向客户会员运营场景的 Agent 诊断模板。",
   },
 ];
 
@@ -295,16 +243,6 @@ function loadWorkspace() {
   } catch {
     localStorage.removeItem("conswork.assets");
   }
-}
-
-function industryKeyFromLabel(label) {
-  const map = {
-    金融: "finance",
-    制造: "manufacturing",
-    零售: "retail",
-    政企: "government",
-  };
-  return map[label] || "finance";
 }
 
 function persistTokens() {
@@ -513,8 +451,6 @@ function renderPipeline(running = false) {
 function selectTask(taskId) {
   state.selectedTaskId = taskId;
   const task = currentTask();
-  state.industry = industryKeyFromLabel(task.industry);
-  qs("#industry-select").value = state.industry;
   qs("#requirement-input").value = task.requirement || sampleRequirement;
   state.diagnosis = null;
   state.matchedCases = [];
@@ -539,19 +475,17 @@ function renderContexts() {
 }
 
 function buildDiagnosis() {
-  const model = industryModels[state.industry];
   const content = qs("#requirement-input").value.trim() || sampleRequirement;
-  const isFinance = state.industry === "finance";
   const task = currentTask();
 
   state.diagnosis = {
     customer: content.includes("客户：")
       ? content.split("客户：")[1].split("\n")[0].trim()
       : task.name,
-    industry: model.label,
-    scenario: model.scenario,
-    score: isFinance ? 88 : 81,
-    summary: `客户处于${isFinance ? "智能客服试点规划" : model.scenario}阶段，核心诉求是将分散知识、历史方案和客户交流材料转化为可复用的业务生产能力。`,
+    industry: task.industry,
+    scenario: task.scenario,
+    score: task.industry === "金融" ? 88 : 82,
+    summary: `客户处于${task.stage}阶段，核心诉求是围绕“${task.scenario}”将分散知识、历史方案和客户交流材料转化为可复用的业务生产能力。`,
     explicitNeeds: [
       "统一接入客户需求文件、会议纪要、录屏转写等多源材料",
       "自动输出客户需求诊断报告",
@@ -559,7 +493,7 @@ function buildDiagnosis() {
       "生成面向管理层和铁三角的解决方案 PPT",
     ],
     implicitNeeds: [
-      "需要建立可配置的行业诊断模型，而不是一次性问答",
+      "需要建立围绕客户资料的可配置 Agent 工作流，而不是一次性问答",
       "需要案例引用权限、脱敏策略和质检机制",
       "需要将 KH、KMS、本地电脑资料抽象为统一知识源",
     ],
@@ -659,7 +593,7 @@ function renderListBlock(title, items) {
 }
 
 function matchCases() {
-  const preferred = state.industry === "finance" ? "金融" : industryModels[state.industry].label.replace("行业", "");
+  const preferred = currentTask().industry;
   state.matchedCases = cases
     .map((item) => ({
       ...item,
@@ -802,7 +736,7 @@ function generateSlides(options = {}) {
       body: [
         "第 1 阶段：完成 Web MVP 和模拟 Agent 闭环",
         "第 2 阶段：接入 KH、KMS、本地文件夹和真实大模型",
-        "第 3 阶段：加入权限、质检、推送和多行业模型运营",
+        "第 3 阶段：加入权限、质检、推送和客户级 Agent 流程配置",
       ],
       note: "用于明确下一步项目推进节奏。",
     },
@@ -918,7 +852,7 @@ function solutionToMarkdown() {
 }
 
 function renderAgents() {
-  const model = industryModels[state.industry];
+  const task = currentTask();
   const baseAgents = [
     {
       name: "资料解析 Agent",
@@ -965,7 +899,9 @@ function renderAgents() {
           <h3>${agent.name}</h3>
           <p>${agent.desc}</p>
           <div class="agent-meta">
-            <span class="tag">${model.label}</span>
+            <span class="tag">${task.name}</span>
+            <span class="tag">${task.industry}</span>
+            <span class="tag">${task.scenario}</span>
             <span class="tag">输入：${agent.input}</span>
             <span class="tag">输出：${agent.output}</span>
           </div>
@@ -1052,16 +988,6 @@ function renderSettings() {
   });
 }
 
-function refreshForIndustry() {
-  state.matchedCases = [];
-  state.selectedCaseIds = new Set();
-  state.slides = [];
-  renderAgents();
-  renderCases();
-  generateSlides({ silent: true });
-  showToast(`已切换到${industryModels[state.industry].label}诊断模型`);
-}
-
 function renderAll() {
   renderMetrics();
   renderTasks();
@@ -1086,11 +1012,6 @@ function bindEvents() {
 
   qsa("[data-view-target]").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.viewTarget));
-  });
-
-  qs("#industry-select").addEventListener("change", (event) => {
-    state.industry = event.target.value;
-    refreshForIndustry();
   });
 
   qs("#task-select").addEventListener("change", (event) => {
@@ -1202,8 +1123,6 @@ function init() {
   loadWorkspace();
   loadTokens();
   const task = currentTask();
-  state.industry = industryKeyFromLabel(task.industry);
-  qs("#industry-select").value = state.industry;
   qs("#requirement-input").value = task.requirement || sampleRequirement;
   renderAll();
   bindEvents();
